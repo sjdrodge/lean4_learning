@@ -1,5 +1,6 @@
 namespace Hidden
 
+
 -- Notes on Lean's type theory:
 -- In Lean, every expression `x` has a type `T`.
 -- The notation `x : T` means "x has type T."
@@ -28,22 +29,32 @@ namespace Hidden
 -- `less_than_5 : Nat → Prop`
 
 -- Proof Irrelevance: Every type in `Prop` is either empty or a singleton.
--- In other words, for a proof of any `Prop`, the compiler checks the proof, then
--- discards it. No details about the construction of the proof can be relied on elsewhere.
+-- In other words, any two proofs of the same proposition are definitionally equal.
+-- Furthermore, no details about the construction of a proof may be used unless
+-- you are constructing another proof-irrelevant value (i.e. a proof of some `Prop`).
+-- Without proof irrelevance, impredicativity would lead to a Girard-like paradox.
 
--- This latter property makes it impossible to eliminate from a type in `Prop` into a type
--- from a larger universe, which conveniently avoids the Girard-like paradox that
--- impredicativity would otherwise create.
+
+-- Creating new data types in Lean is done using so-called "inductive types."
+-- To fully specify an inductive type, we must define a set of "introduction" rules
+-- (how to construct the type) and "elimination" rules (how to destruct/use the type).
+-- For an inductive type `T`, we define the introduction rules directly
+-- when we define `T`'s constructors. The elimination rules are then provided
+-- automatically by the compiler as a function `T.recOn`. Several examples follow.
 
 
 -- This is the canonical false proposition. It is guaranteed to be uninhabited
 -- because it has no constructors.
 inductive False : Prop
 
+#check False.recOn
+
 -- This is the canonical true proposition. It is guaranteed to be inhabited
 -- because it has a single constructor that takes no arguments.
 inductive True : Prop where
   | intro : True
+
+#check True.recOn
 
 -- The negation of any proposition `p` is equivalent to the proposition
 -- that `p` implies `False`.
@@ -54,6 +65,8 @@ def Not (p : Prop) : Prop := p → False
 inductive And (p q : Prop) : Prop where
   | intro : p → q → And p q
 
+#check And.recOn
+
 -- This is logical disjunction. It takes two propositions as type parameters.
 -- It has two constructors, one for each proposition.
 -- Each constructor takes a proof of the relevant proposition.
@@ -61,12 +74,15 @@ inductive Or (p q : Prop) : Prop where
   | inl : p → Or p q
   | inr : q → Or p q
 
+#check Or.recOn
+
 -- This is bidirectional implication. It takes two propositions as type
 -- parameters. It has a single constructor which takes proofs of the
 -- implication in each direction.
 inductive Iff (p q : Prop) : Prop where
   | intro : (p → q) → (q → p) → Iff p q
 
+#check Iff.recOn
 
 -- This captures the notion of a proposition being decidable.
 -- To construct a `Decidable p`, one must either provide a proof
